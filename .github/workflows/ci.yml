@@ -27,3 +27,47 @@ jobs:
         run: |
           python -m pip install .
           pipeline-watchdog --help
+  cloud-contracts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install pinned cloud dependencies
+        run: python -m pip install -r requirements-cloud.txt
+      - name: Verify dependency compatibility
+        run: python -m pip check
+      - name: Validate cloud imports without credentials
+        run: PYTHONPATH=src python -c 'from google.cloud import storage; from pipeline_watchdog.cloud import CloudDashboard'
+      - name: Build non-root image without publishing
+        run: docker build -t watchdog-ci .
+      - name: Exercise installed image offline
+        run: docker run --rm --entrypoint python watchdog-ci -m pipeline_watchdog evaluate
+  infrastructure:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: '1.10.5'
+      - name: Check format
+        run: terraform -chdir=infra/gcp fmt -check -recursive
+      - name: Initialize provider without cloud backend
+        run: terraform -chdir=infra/gcp init -backend=false -input=false
+      - name: Validate provider schema
+        run: terraform -chdir=infra/gcp validate
+      - name: Mocked safety plans, no cloud credentials
+        run: terraform -chdir=infra/gcp test
+
+  dependency-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install advisory checker
+        run: python -m pip install pip-audit
+      - name: Audit pinned cloud dependency versions
+        run: python -m pip_audit --disable-pip --no-deps -r requirements-cloud.txt
