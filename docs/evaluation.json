@@ -1,0 +1,112 @@
+{
+  "evaluation": "deterministic synthetic contract fixtures",
+  "passed": true,
+  "cases_passed": 9,
+  "cases_total": 9,
+  "precision": 1.0,
+  "recall": 1.0,
+  "true_positive_checks": 18,
+  "false_positive_checks": 0,
+  "false_negative_checks": 0,
+  "scope": "Synthetic fixtures exercise implemented rules and lifecycle; not a production benchmark or LLM evaluation.",
+  "cases": [
+    {
+      "scenario": "healthy",
+      "expected": [],
+      "observed": [],
+      "passed": true
+    },
+    {
+      "scenario": "late-arrival",
+      "expected": [
+        "orders_clean:freshness",
+        "orders_raw:freshness",
+        "revenue_daily:freshness"
+      ],
+      "observed": [
+        "orders_clean:freshness",
+        "orders_raw:freshness",
+        "revenue_daily:freshness"
+      ],
+      "passed": true
+    },
+    {
+      "scenario": "schema-drift",
+      "expected": [
+        "orders_raw:schema"
+      ],
+      "observed": [
+        "orders_raw:schema"
+      ],
+      "passed": true
+    },
+    {
+      "scenario": "quality-regression",
+      "expected": [
+        "orders_clean:duplicates",
+        "orders_clean:null_rate"
+      ],
+      "observed": [
+        "orders_clean:duplicates",
+        "orders_clean:null_rate"
+      ],
+      "passed": true
+    },
+    {
+      "scenario": "volume-drop",
+      "expected": [
+        "orders_clean:volume",
+        "orders_raw:volume"
+      ],
+      "observed": [
+        "orders_clean:volume",
+        "orders_raw:volume"
+      ],
+      "passed": true
+    },
+    {
+      "scenario": "run-failure",
+      "expected": [
+        "revenue_daily:run_failure"
+      ],
+      "observed": [
+        "revenue_daily:run_failure"
+      ],
+      "passed": true
+    },
+    {
+      "scenario": "cascade",
+      "expected": [
+        "orders_clean:duplicates",
+        "orders_clean:freshness",
+        "orders_clean:null_rate",
+        "orders_clean:volume",
+        "orders_raw:freshness",
+        "orders_raw:schema",
+        "orders_raw:volume",
+        "revenue_daily:freshness",
+        "revenue_daily:run_failure"
+      ],
+      "observed": [
+        "orders_clean:duplicates",
+        "orders_clean:freshness",
+        "orders_clean:null_rate",
+        "orders_clean:volume",
+        "orders_raw:freshness",
+        "orders_raw:schema",
+        "orders_raw:volume",
+        "revenue_daily:freshness",
+        "revenue_daily:run_failure"
+      ],
+      "passed": true
+    },
+    {
+      "scenario": "recovery",
+      "passed": true
+    },
+    {
+      "scenario": "reopen-without-duplication",
+      "passed": true
+    }
+  ]
+}

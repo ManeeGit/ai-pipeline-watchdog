@@ -1,0 +1,3 @@
+order_id,customer_id,region,amount,event_time
+1,synthetic-1001,North,42.50,2026-01-01T12:00:00Z
+2,synthetic-1002,South,19.95,2026-01-01T12:05:00Z

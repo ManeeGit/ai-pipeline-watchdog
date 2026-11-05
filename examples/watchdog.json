@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "pipelines": [
+    {
+      "name": "orders_raw",
+      "path": "orders.csv",
+      "schema": {
+        "order_id": "integer",
+        "customer_id": "string",
+        "region": "string",
+        "amount": "number",
+        "event_time": "timestamp"
+      },
+      "timestamp_column": "event_time",
+      "key_columns": [
+        "order_id"
+      ],
+      "max_age_minutes": 60,
+      "run_status_path": "run-status.json"
+    }
+  ]
+}
