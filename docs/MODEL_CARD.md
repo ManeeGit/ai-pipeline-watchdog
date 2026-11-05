@@ -8,7 +8,7 @@ Summarize existing data-reliability incident evidence for a human operator. Sele
 
 - Default: deterministic rule-based investigator. It is not a generative model.
 - Optional: an already-installed model served by Ollama on `http://127.0.0.1:11434/api/chat`. `qwen2.5:3b` is the configurable default model identifier, not a bundled dependency or a guarantee of quality.
-- Remote/cloud providers: not implemented.
+- External API: a typed provider protocol and deliberately empty transport hook are provided. No remote client, API key or paid service is configured. Fixture transports can be injected for contract tests; real integration remains an explicit future decision.
 
 ## Inputs and privacy
 

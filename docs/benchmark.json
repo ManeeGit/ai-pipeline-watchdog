@@ -2,8 +2,8 @@
   "scope": "30 scans, 3 synthetic CSV pipelines, approximately 410 total rows; excludes browser and model",
   "platform": "Linux",
   "python": "3.12.14",
-  "median_scan_ms": 5.741,
-  "p95_scan_ms": 8.618,
-  "peak_process_rss_mib": 14.75,
-  "database_bytes": 135168
+  "median_scan_ms": 7.709,
+  "p95_scan_ms": 64.583,
+  "peak_process_rss_mib": 15.12,
+  "database_bytes": 172032
 }

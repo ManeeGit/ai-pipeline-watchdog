@@ -4,6 +4,7 @@ import argparse
 import json
 import logging
 import sys
+import sqlite3
 import threading
 import time
 from pathlib import Path
@@ -31,10 +32,15 @@ def parser() -> argparse.ArgumentParser:
     scenario = commands.add_parser("scenario", help="Change only a generated demo's synthetic fixtures and scan")
     scenario.add_argument("name", choices=SCENARIOS)
     scenario.add_argument("--workspace", type=Path, default=Path("demo-workspace"))
-    for name in ("scan", "watch", "serve", "report", "explain"):
+    for name in ("scan", "watch", "serve", "report", "explain", "backup", "prune"):
         cmd = commands.add_parser(name)
         cmd.add_argument("--config", type=Path, default=Path("demo-workspace/watchdog.json"))
         cmd.add_argument("--db", type=Path, help="Defaults to watchdog.db alongside config")
+        if name == "backup":
+            cmd.add_argument("--output", type=Path, required=True)
+        if name == "prune":
+            cmd.add_argument("--retain-days", type=positive, default=30)
+            cmd.add_argument("--apply", action="store_true", help="Delete eligible history; default only previews")
         if name in {"watch", "serve"}:
             cmd.add_argument("--interval", type=positive, default=30, help="Seconds between scans; minimum 5")
         if name == "watch":
@@ -72,7 +78,11 @@ def main(argv: list[str] | None = None) -> int:
                 result = app.scan()
                 print(json.dumps(result, indent=2))
                 return 2 if args.fail_on_incident and result["open_incidents"] else 0
-            if args.command == "report":
+            if args.command == "backup":
+                result = app.store.backup(args.output)
+            elif args.command == "prune":
+                result = app.store.prune(args.retain_days, args.apply)
+            elif args.command == "report":
                 result = app.summary()
             elif args.command == "explain":
                 result = app.summary()["triage"]
@@ -118,7 +128,7 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     except KeyboardInterrupt:
         return 0
-    except (OSError, ValueError) as exc:
+    except (OSError, ValueError, sqlite3.Error) as exc:
         print(f"Error: {exc}", file=sys.stderr)
         return 1
 

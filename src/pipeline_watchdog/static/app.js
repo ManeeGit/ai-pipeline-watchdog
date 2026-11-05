@@ -35,12 +35,13 @@ function fillDetail(item) {
 }
 function openIncident(item) { selectedIncident=item.id; fillDetail(item); if(!$('detail').open) $('detail').showModal(); }
 function render(data) {
-  state=data; const open=data.incidents.filter(i=>i.status==='open'); const healthy=data.pipelines.filter(p=>p.snapshot&&p.snapshot.healthy).length;
+  state=data; $('deployment-mode').textContent=data.deployment?'GCP · IAM':'LOCAL-FIRST'; const open=data.incidents.filter(i=>i.status==='open'); const healthy=data.pipelines.filter(p=>p.snapshot&&p.snapshot.healthy).length;
   $('pipeline-count').textContent=data.pipelines.length; $('healthy-count').textContent=`${healthy}/${data.pipelines.length}`; $('healthy-note').textContent=healthy===data.pipelines.length?'All observed checks passing':'Review affected stages below';
   $('incident-count').textContent=open.length; $('incident-note').textContent=`${open.filter(i=>i.severity==='critical').length} critical · ${open.filter(i=>i.severity==='warning').length} warning`;
   const scan=data.stats.last_scan; $('scan-latency').textContent=scan?`${Math.round(scan.duration_ms)} ms`:'–'; $('scan-note').textContent=`${fmt(data.stats.scan_count)} scans persisted locally`; $('last-scan').textContent=scan?`Last scan ${date(scan.observed_at)}`:'No scans yet';
   const age=scan?(Date.now()-new Date(scan.observed_at).getTime())/60000:Infinity;
-  $('connection-label').textContent=age>5?'Dashboard connected · scan >5m old':'Dashboard connected'; $('connection').className=`status-dot ${age>5?'warn':'good'}`;
+  const staleMinutes=(data.deployment?.max_scan_age_seconds??300)/60;
+  $('connection-label').textContent=age>staleMinutes?'Dashboard connected · scan overdue':'Dashboard connected'; $('connection').className=`status-dot ${age>staleMinutes?'warn':'good'}`;
   $('pipelines').replaceChildren();
   data.pipelines.forEach(p=>{ const current=open.filter(i=>i.pipeline===p.name); const severity=!p.snapshot?'unknown':current.some(i=>i.severity==='critical')?'critical':current.length?'warning':'healthy'; const card=el('article','pipeline');
     const top=el('div','pipeline-top'); top.append(el('span','pipeline-name',p.name),el('span',`badge ${severity}`,severity)); card.append(top,el('div','pipeline-deps',p.dependencies.length?`Depends on ${p.dependencies.join(', ')}`:'Source · no upstream dependencies'));
@@ -55,7 +56,7 @@ function render(data) {
 async function refresh() {
   if(inFlight) return; inFlight=true; $('refresh').disabled=true;
   try {const response=await fetch('/api/summary',{cache:'no-store',signal:AbortSignal.timeout(10000)});if(!response.ok)throw new Error('Local service returned an error');render(await response.json());$('error').hidden=true;}
-  catch(error){$('error').hidden=false;$('error').textContent='Cannot read the local watchdog. Displayed data may be stale. Check the foreground server and refresh.';$('connection-label').textContent='Disconnected';$('connection').className='status-dot bad';}
+  catch(error){$('error').hidden=false;$('error').textContent='Cannot read the local watchdog. Displayed data may be stale. Check the monitoring process and refresh.';$('connection-label').textContent='Disconnected';$('connection').className='status-dot bad';}
   finally{inFlight=false;$('refresh').disabled=false;}
 }
 $('filter').addEventListener('change',()=>{if(state)drawIncidents();});$('refresh').addEventListener('click',refresh);$('close-detail').addEventListener('click',()=>$('detail').close());$('detail').addEventListener('close',()=>{selectedIncident=null;});

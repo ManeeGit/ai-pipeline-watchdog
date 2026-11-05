@@ -1,6 +1,6 @@
 # Security scope
 
-This is a single-user local prototype. Do not expose its HTTP server to other devices, public networks, reverse proxies or tunnels. There is no authentication or multi-tenant authorization layer.
+The local development server is single-user and loopback-only. Do not expose it to other devices, public networks, reverse proxies or tunnels. It has no authentication. The separate cloud entrypoint requires verified Cloud Run IAM and distinct runtime identities as documented in infra/gcp. Application-level multi-tenant authorization is not implemented.
 
 ## Built-in boundaries
 
@@ -30,3 +30,8 @@ Do not include secrets or private data in public issues. Describe the affected v
 ## Validation
 
 The test suite covers path traversal, symlink escape, predictable-temp-file attacks, malformed inputs, response allowlists, DNS-rebinding Host rejection, write-route rejection and atomic persistence. Tests are not a security certification. See README for checks actually run and remaining validation limits.
+
+
+## Cloud deployment
+
+See docs/THREAT_MODEL.md and docs/PRODUCTION_REVIEW.md for cloud trust boundaries, scoped identities, generation-precondition writes, recovery, billing risk and remaining validation gates. Infrastructure code is not evidence that a live deployment enforces its intended policy.

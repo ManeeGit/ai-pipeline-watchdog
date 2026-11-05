@@ -16,6 +16,7 @@ All declared columns share one null threshold in this version. Extra columns are
 
 ## Observability
 
+- `GET /readyz`: recent completed scan and no recorded scanner failure. Data-contract health is separate.
 - `GET /healthz`: HTTP-process liveness only. It does not prove data freshness or monitoring progress.
 - `GET /api/summary`: latest observations, bounded history, incident evidence, triage and recent events.
 - `GET /metrics`: unresolved incidents, persisted scans, latest collection/detection duration, health, row counts and freshness by pipeline.
@@ -23,19 +24,19 @@ All declared columns share one null threshold in this version. Extra columns are
 - `report` writes a full JSON summary to stdout; redirect it into a file if needed.
 - `scan --fail-on-incident` exits 2 for open incidents, 1 for operational/configuration failures, and 0 when healthy. Collection failures are persisted as incidents rather than treated as a fatal CLI error.
 
-The dashboard explicitly distinguishes being connected to HTTP from a recent scan. It warns if the latest scan is older than five minutes, a fixed UI indicator rather than the configured freshness SLO.
+The dashboard explicitly distinguishes being connected to HTTP from a recent scan. It warns if the latest local scan is older than five minutes. In cloud mode it uses the configured scanner-readiness age, default 65 minutes for a thirty-minute schedule. These operational indicators are separate from per-pipeline freshness SLOs.
 
 ## Disk and recovery
 
-Snapshot history grows with every scan. Reads are bounded, but automatic retention is not implemented. Monitor disk space, choose a practical interval, and archive complete workspace copies when the process is stopped. SQLite backup tooling or a cleanly stopped database copy is safer than copying an active WAL database piecemeal. Do not manually edit incident rows while the process runs.
+Snapshot history grows with every scan. Reads are bounded. The local prune command previews eligible deletions unless --apply is selected; the cloud adapter applies configured retention. Current observations and incident/event evidence are preserved, so growth is not eliminated. Monitor disk space, choose a practical interval, and archive complete workspace copies when the process is stopped. SQLite backup tooling or a cleanly stopped database copy is safer than copying an active WAL database piecemeal. Do not manually edit incident rows while the process runs.
 
-A schema version other than 1 is rejected. No migration framework is provided. Keep backups before upgrading a future release. Restore a separate workspace to validate a backup before replacing current state.
+Schema versions 1 and 2 are recognized. An additive v1→v2 migration preserves existing snapshots/incidents and creates runtime/baseline tables; the content-based baseline warms up from new distinct inputs. Unknown versions are rejected before schema changes. This is not a general multi-version migration framework. Keep backups before upgrading a future release. Restore a separate workspace to validate a backup before replacing current state.
 
 ## Troubleshooting
 
 - **Demo already exists:** choose a new directory or use `scenario` on the existing generated demo. The tool intentionally does not delete existing work.
 - **Source availability incident:** check configured relative paths, file permissions, CSV shape and optional status JSON.
-- **No volume alerts yet:** five healthy observations are required. Repeated polling counts as observations, not distinct producer runs.
+- **No volume alerts yet:** five distinct healthy file-content samples are required. Repeated polling of the same content does not add baseline weight.
 - **Dashboard does not change:** `serve` alone reads existing state. Run `scan`/`scenario`, a separate `watch`, or `serve --watch`.
 - **Local AI falls back:** verify Ollama is listening on port 11434 and that the selected model is already installed. Timeout, transport, oversized or invalid responses all preserve deterministic output.
 - **Port already in use:** use `serve --port 8766` and open that exact loopback URL.

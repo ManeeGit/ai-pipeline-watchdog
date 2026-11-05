@@ -12,7 +12,7 @@ STATIC = Path(__file__).parent / "static"
 
 def make_server(app: Watchdog, port: int = 8765) -> ThreadingHTTPServer:
     class Handler(BaseHTTPRequestHandler):
-        server_version = "PipelineWatchdog/0.1"
+        server_version = "PipelineWatchdog/0.2"
         def log_message(self, format, *args):
             pass
 
@@ -37,6 +37,9 @@ def make_server(app: Watchdog, port: int = 8765) -> ThreadingHTTPServer:
             try:
                 if path == "/api/summary":
                     self.respond(200, json.dumps(app.summary(), allow_nan=False).encode(), "application/json; charset=utf-8")
+                elif path == "/readyz":
+                    ready = app.readiness()
+                    self.respond(200 if ready["ready"] else 503, json.dumps(ready).encode(), "application/json")
                 elif path == "/healthz":
                     self.respond(200, b'{"status":"ok","scope":"http-process-only"}', "application/json")
                 elif path == "/metrics":

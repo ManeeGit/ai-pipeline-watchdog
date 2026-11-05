@@ -1,0 +1,10 @@
+project_id          = "your-dedicated-project"
+billing_account     = "000000-000000-000000"
+region              = "us-central1"
+image_uri           = "us-central1-docker.pkg.dev/your-dedicated-project/your-registry/watchdog@sha256:REPLACE_WITH_64_HEX_DIGEST"
+alert_email         = "operator@example.com"
+dashboard_invokers  = ["user:operator@example.com"]
+monthly_budget_usd  = 10
+scheduler_paused    = true
+input_mode         = "synthetic"
+scenario           = "healthy"

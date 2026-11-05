@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import csv
 import io
+import hashlib
 import json
 import math
 import time
@@ -51,6 +52,7 @@ def collect(root: Path, pipeline: Pipeline, now: datetime) -> Snapshot:
             content = binary.read(MAX_BYTES + 1)
         if len(content) > MAX_BYTES:
             raise ValueError("source_too_large")
+        out.source_fingerprint = hashlib.sha256(content).hexdigest()
         with io.StringIO(content.decode("utf-8"), newline="") as stream:
             reader = csv.DictReader(stream, strict=True)
             columns = reader.fieldnames or []

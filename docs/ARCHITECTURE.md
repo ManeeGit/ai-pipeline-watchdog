@@ -20,7 +20,7 @@ Each scan captures an observation timestamp, collects bounded CSV inputs in memo
 
 ## Data model
 
-`scans` identifies an observation batch and records collection/detection latency. `snapshots` stores aggregate JSON plus indexed pipeline, time, row count, and health fields. `incidents` stores stable IDs keyed by `pipeline:check`, current evidence, first/last observation, count, resolution time, and source snapshot. `incident_events` records only opening, reopening, and resolution transitions, not every poll.
+`runtime_state` persists operational failure/readiness counters. `baseline_samples` maintains at most thirty distinct healthy content fingerprints per pipeline. `scans` identifies an observation batch and records collection/detection latency. `snapshots` stores aggregate JSON plus indexed pipeline, time, row count, and health fields. `incidents` stores stable IDs keyed by `pipeline:check`, current evidence, first/last observation, count, resolution time, and source snapshot. `incident_events` records only opening, reopening, and resolution transitions, not every poll.
 
 A repeated failed check increments its observation count without duplicating the incident. A passing check resolves an open incident only if its prerequisites were actually inspectable. For example, losing a key column cannot prove that duplicates disappeared. A collector failure leaves prior findings open and adds availability evidence. A later trustworthy healthy scan can resolve them.
 
@@ -28,9 +28,9 @@ Snapshots store no cell samples. Column names and aggregate evidence remain sens
 
 ## Baseline reasoning
 
-Use up to thirty prior **healthy snapshots**. Require at least five before evaluating volume. Let `m` be median row count and `MAD` the median absolute deviation. The scale is `max(1.4826 × MAD, 0.1 × m, 1)`. Alert only when deviation/scale ≥ 3.5 **and** relative deviation ≥ 0.30. A floor prevents constant small baselines from creating unstable scores.
+Use up to thirty distinct **healthy content fingerprints**. Require at least five before evaluating volume. Repeated unchanged-file polls update recency but do not add baseline weight. Let `m` be median row count and `MAD` the median absolute deviation. The scale is `max(1.4826 × MAD, 0.1 × m, 1)`. Alert only when deviation/scale ≥ 3.5 **and** relative deviation ≥ 0.30. A floor prevents constant small baselines from creating unstable scores.
 
-This simple detector is inspectable and works without scientific packages. It does not model weekday effects, backfills, partitions, or unique execution runs. Failed observations do not contaminate the healthy reference distribution. A lasting expected volume change requires an intentional baseline/configuration strategy outside this prototype.
+This simple detector is inspectable and works without scientific packages. It does not model weekday effects, backfills, partitions, or unique producer execution IDs. Failed observations do not contaminate the healthy reference distribution. A lasting expected volume change requires an intentional baseline/configuration strategy outside this prototype.
 
 ## Why SQLite and standard-library HTTP?
 
@@ -43,3 +43,8 @@ The dashboard polls persisted state independently of scanning. `serve --watch` a
 A local model can improve the readability of incident evidence without owning correctness-critical state. Its payload excludes free-form source strings, reducing both privacy and prompt-injection exposure. Structured citations and approved playbook IDs reduce unsupported actions, but do **not** prove the narrative is factually entailed. UI text is inserted with `textContent`; no model HTML or commands execute.
 
 The deterministic fallback is a rule-based investigator, not an LLM. Evidence remains usable when no model is installed. This is an explicit product property rather than a hidden degraded mode.
+
+
+## Cloud boundary
+
+The separate `cloud.py` adapter stages private GCS inputs, restores a coherent local state bundle, scans transactionally and uploads a backup using generation preconditions. The read-only Gunicorn entrypoint has a different service account. See `infra/gcp/README.md` for consistency, IAM, size limits and deployment gates. No live SQLite file is mounted on object storage.

@@ -21,3 +21,10 @@ htmlcov/
 demo-workspace/
 local-data/
 artifacts/
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+*.tfvars
+!*.tfvars.example
+crash.log

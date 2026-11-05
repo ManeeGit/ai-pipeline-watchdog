@@ -51,6 +51,7 @@ class Snapshot:
     duration_ms: float = 0
     snapshot_id: int | None = None
     evaluated_checks: list[str] = field(default_factory=list)
+    source_fingerprint: str | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
